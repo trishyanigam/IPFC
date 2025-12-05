@@ -23,7 +23,7 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="px-6 max-w-6xl mx-auto text-center">
+    <div className="px-6 max-w-6xl mx-auto text-center mt-10">
       {/* Badge */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -38,7 +38,7 @@ export default function HomePage() {
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="mt-6 text-4xl md:text-6xl font-extrabold text-gray-900 dark:text-white"
+        className="mt-20 text-4xl md:text-6xl font-extrabold text-gray-900 dark:text-white"
       >
         Intellectual Property
         <br />

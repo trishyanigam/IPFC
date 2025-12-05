@@ -3,18 +3,24 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Smooth scrolling */
+/* Auto dark mode support */
 html {
-  scroll-behavior: smooth;
+  color-scheme: light dark;
 }
 
-/* Reset body spacing */
-body {
-  margin: 0;
-  padding: 0;
-}
-
-/* Slight transition for theme change */
+/* Smooth transitions */
 * {
-  transition: background-color 0.2s linear, color 0.2s linear, border-color 0.2s linear;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
+
+/* Reusable input style */
+.input-field {
+  @apply w-full p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm 
+         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all;
+}
+
+/* Reusable button style */
+.btn-primary {
+  @apply w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold shadow-md transition-all;
+}
+
