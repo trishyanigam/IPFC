@@ -1,13 +1,27 @@
-import React, { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import React, { useState, useContext } from "react";
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+  sendEmailVerification,
+} from "firebase/auth";
 import { auth } from "../services/firebase";
 import { Link, useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+
+  // 🔥 Only use refreshUser from AuthContext
+  const { refreshUser } = useContext(AuthContext);
+  const { forceAuthUpdate } = useContext(AuthContext);
+
+
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [form, setForm] = useState({
+    role: "",
     fullName: "",
     email: "",
     password: "",
@@ -17,30 +31,72 @@ export default function RegisterPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await createUserWithEmailAndPassword(auth, form.email, form.password);
-      navigate("/dashboard");
-    } catch (err) {
-      setError(err.message);
-    }
-  };
+  e.preventDefault();
+  setError("");
+  setLoading(true);
+
+  try {
+    const cred = await createUserWithEmailAndPassword(
+      auth,
+      form.email,
+      form.password
+    );
+
+    await updateProfile(cred.user, {
+      displayName: `${form.fullName}__${form.role}`,
+    });
+
+    // 🔥 Trigger AuthContext refresh – FIXES your issue
+    await forceAuthUpdate();
+
+    await sendEmailVerification(cred.user);
+
+    navigate("/verify-email");
+  } catch (err) {
+    setError(err.message);
+  }
+
+  setLoading(false);
+};
+
 
   return (
-    <div className="pt-32 px-6 flex justify-center">
-      <div className="max-w-md w-full bg-gray-100 dark:bg-gray-900 rounded-2xl shadow-xl p-8 border border-gray-300 dark:border-gray-700">
+    <div className="pt-28 px-6 flex justify-center">
+      <div className="max-w-md w-full bg-gray-100 dark:bg-gray-900 
+        rounded-2xl shadow-xl p-8 border border-gray-300 dark:border-gray-700">
+
         <h1 className="text-3xl font-bold text-center mb-2 text-gray-900 dark:text-white">
           Create Your Account
         </h1>
+
         <p className="text-center text-gray-600 dark:text-gray-300 mb-6">
           Register to access your dashboard
         </p>
 
-        {error && (
-          <p className="text-red-500 text-sm text-center mb-3">{error}</p>
-        )}
+        {/* Error */}
+        {error && <p className="text-red-500 text-sm text-center mb-3">{error}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-5">
+
+          {/* ROLE FIELD */}
+          <div>
+            <label className="text-sm text-gray-700 dark:text-gray-300">
+              Select Role
+            </label>
+            <select
+              name="role"
+              value={form.role}
+              onChange={handleChange}
+              className="input-field mt-1 text-gray-700 dark:text-gray-300"
+              required
+            >
+              <option value="">Select Role (Applicant / Admin)</option>
+              <option value="applicant">Applicant</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+
+          {/* FULL NAME */}
           <div>
             <label className="text-sm text-gray-700 dark:text-gray-300">
               Full Name
@@ -49,11 +105,12 @@ export default function RegisterPage() {
               name="fullName"
               onChange={handleChange}
               className="input-field mt-1"
-              placeholder="Enter your name"
+              placeholder="Enter your full name"
               required
             />
           </div>
 
+          {/* EMAIL */}
           <div>
             <label className="text-sm text-gray-700 dark:text-gray-300">
               Email Address
@@ -68,21 +125,40 @@ export default function RegisterPage() {
             />
           </div>
 
-          <div>
+          {/* PASSWORD */}
+          <div className="relative">
             <label className="text-sm text-gray-700 dark:text-gray-300">
               Password
             </label>
+
             <input
               name="password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               onChange={handleChange}
-              className="input-field mt-1"
+              className="input-field mt-1 pr-10"
               placeholder="Enter your password"
               required
             />
+
+            <span
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-10 cursor-pointer select-none text-xl"
+            >
+              {showPassword ? "🙈" : "👁️"}
+            </span>
           </div>
 
-          <button className="btn-primary">Sign Up</button>
+          {/* BUTTON */}
+          <button
+            disabled={loading}
+            className="btn-primary w-full flex justify-center items-center gap-3"
+          >
+            {loading && (
+              <span className="w-5 h-5 border-2 border-white border-t-transparent 
+              rounded-full animate-spin"></span>
+            )}
+            {loading ? "Creating Account..." : "Sign Up"}
+          </button>
 
           <p className="text-sm text-center text-gray-600 dark:text-gray-400">
             Already have an account?{" "}
