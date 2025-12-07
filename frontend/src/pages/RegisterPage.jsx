@@ -10,55 +10,85 @@ import { AuthContext } from "../context/AuthContext";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-
-  // 🔥 Only use refreshUser from AuthContext
-  const { refreshUser } = useContext(AuthContext);
   const { forceAuthUpdate } = useContext(AuthContext);
-
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showCPassword, setShowCPassword] = useState(false);
 
   const [form, setForm] = useState({
     role: "",
     fullName: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
+  // ⭐ PASSWORD VALIDATION
+  const validatePassword = (password) => {
+    const minLength = /.{8,}/;
+    const upper = /[A-Z]/;
+    const number = /[0-9]/;
+    const special = /[@$!%*?&#]/;
+
+    if (!minLength.test(password))
+      return "Password must be at least 8 characters long.";
+    if (!upper.test(password))
+      return "Password must contain at least one uppercase letter.";
+    if (!number.test(password))
+      return "Password must contain at least one number.";
+    if (!special.test(password))
+      return "Password must contain at least one special character (@$!%*?&#).";
+
+    return null;
+  };
+
+  // ⭐ SUBMIT HANDLER
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError("");
-  setLoading(true);
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
-  try {
-    const cred = await createUserWithEmailAndPassword(
-      auth,
-      form.email,
-      form.password
-    );
+    // 🔥 1. Validate password
+    const passwordError = validatePassword(form.password);
+    if (passwordError) {
+      setError(passwordError);
+      setLoading(false);
+      return;
+    }
 
-    await updateProfile(cred.user, {
-      displayName: `${form.fullName}__${form.role}`,
-    });
+    // 🔥 2. Check confirm password match
+    if (form.password !== form.confirmPassword) {
+      setError("Passwords do not match.");
+      setLoading(false);
+      return;
+    }
 
-    // 🔥 Trigger AuthContext refresh – FIXES your issue
-    await forceAuthUpdate();
+    try {
+      const cred = await createUserWithEmailAndPassword(
+        auth,
+        form.email,
+        form.password
+      );
 
-    await sendEmailVerification(cred.user);
+      await updateProfile(cred.user, {
+        displayName: `${form.fullName}__${form.role}`,
+      });
 
-    navigate("/verify-email");
-  } catch (err) {
-    setError(err.message);
-  }
+      await forceAuthUpdate();
+      await sendEmailVerification(cred.user);
 
-  setLoading(false);
-};
+      navigate("/verify-email");
+    } catch (err) {
+      setError(err.message);
+    }
 
+    setLoading(false);
+  };
 
   return (
     <div className="pt-28 px-6 flex justify-center">
@@ -73,7 +103,6 @@ export default function RegisterPage() {
           Register to access your dashboard
         </p>
 
-        {/* Error */}
         {error && <p className="text-red-500 text-sm text-center mb-3">{error}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -145,6 +174,29 @@ export default function RegisterPage() {
               className="absolute right-3 top-10 cursor-pointer select-none text-xl"
             >
               {showPassword ? "🙈" : "👁️"}
+            </span>
+          </div>
+
+          {/* CONFIRM PASSWORD */}
+          <div className="relative">
+            <label className="text-sm text-gray-700 dark:text-gray-300">
+              Confirm Password
+            </label>
+
+            <input
+              name="confirmPassword"
+              type={showCPassword ? "text" : "password"}
+              onChange={handleChange}
+              className="input-field mt-1 pr-10"
+              placeholder="Re-enter your password"
+              required
+            />
+
+            <span
+              onClick={() => setShowCPassword(!showCPassword)}
+              className="absolute right-3 top-10 cursor-pointer select-none text-xl"
+            >
+              {showCPassword ? "🙈" : "👁️"}
             </span>
           </div>
 

@@ -181,7 +181,7 @@ export default function HomePage() {
             className="mt-8 flex justify-center gap-4 flex-wrap"
           >
             <motion.a
-              href="/login"
+              href="/register"
               whileHover={{
                 scale: 1.05,
                 y: -2,
