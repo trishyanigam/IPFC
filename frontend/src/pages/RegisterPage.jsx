@@ -91,7 +91,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="pt-28 px-6 flex justify-center">
+    <div className="pt-10 px-6 flex justify-center">
       <div className="max-w-md w-full bg-gray-100 dark:bg-gray-900 
         rounded-2xl shadow-xl p-8 border border-gray-300 dark:border-gray-700">
 

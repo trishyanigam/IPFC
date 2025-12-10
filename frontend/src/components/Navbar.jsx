@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { auth } from "../services/firebase";
 import ApplicantNotifications from "../pages/applicant/ApplicantNotifications";
+import { BookCheck } from "lucide-react";
+
 
 export default function Navbar() {
   const { user, role, verified } = useContext(AuthContext);
@@ -46,46 +48,43 @@ export default function Navbar() {
 
   return (
     <nav className="fixed w-full top-0 z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur shadow">
-      <div className="max-w-6xl mx-auto flex justify-between items-center px-6 py-4">
+  <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
 
-        <Link to="/" className="text-xl font-bold text-purple-600 dark:text-purple-400">
-          IPAssist Hub
+    {/* LEFT — LOGO */}
+    
+    <Link to="/" className="flex gap-2 text-xl font-bold text-purple-600 dark:text-purple-400">
+      <BookCheck size={30} />
+      IPAssist Hub
+    </Link>
+
+    {/* CENTER — NAVIGATION TABS */}
+    <div className="flex gap-8 items-center">
+      {(!user || !verified) && publicMenu}
+      {user && verified && normalizedRole === "applicant" && applicantMenu}
+      {user && verified && normalizedRole === "admin" && adminMenu}
+    </div>
+
+    {/* RIGHT — LOGIN / LOGOUT / NOTIFICATIONS */}
+    <div className="flex items-center gap-4">
+      {user && verified && normalizedRole === "applicant" && <ApplicantNotifications />}
+
+      {!user && (
+        <Link to="/login" className="btn-primary px-4 py-2 rounded-lg">
+          Login
         </Link>
+      )}
 
-        <div className="flex gap-6 items-center">
+      {user && verified && (
+        <button
+          onClick={logout}
+          className="bg-red-500 text-white px-4 py-2 rounded-lg"
+        >
+          Logout
+        </button>
+      )}
+    </div>
 
-          {/* PUBLIC MENU FOR NON-VERIFIED USER */}
-          {(!user || !verified) && publicMenu}
-
-          {/* VERIFIED APPLICANT */}
-          {user && verified && normalizedRole === "applicant" && applicantMenu}
-
-          {/* VERIFIED ADMIN */}
-          {user && verified && normalizedRole === "admin" && adminMenu}
-
-          {/* Applicant Notifications */}
-          {user && verified && normalizedRole === "applicant" && (
-            <ApplicantNotifications />
-          )}
-
-          {/* LOGIN WHEN USER IS NOT LOGGED IN */}
-          {!user && (
-            <Link to="/login" className="btn-primary px-4 py-2 rounded-lg">
-              Login
-            </Link>
-          )}
-
-          {/* LOGOUT ONLY WHEN VERIFIED */}
-          {user && verified && (
-            <button
-              onClick={logout}
-              className="bg-red-500 text-white px-4 py-2 rounded-lg"
-            >
-              Logout
-            </button>
-          )}
-        </div>
-      </div>
-    </nav>
+  </div>
+</nav>
   );
 }
