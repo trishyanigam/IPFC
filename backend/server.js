@@ -52,6 +52,7 @@ const applicationRoutes = require('./src/routes/applicationRoutes');
 const documentRoutes = require('./src/routes/documentRoutes');
 const notificationRoutes = require('./src/routes/notificationRoutes');
 const supportRoutes = require('./src/routes/supportRoutes');
+const reportRoutes = require("./src/routes/reportRoutes");
 
 const app = express();
 app.use(cors());
@@ -72,6 +73,7 @@ app.use('/api/documents', authMiddleware, documentRoutes);
 app.use('/api/notifications', authMiddleware, notificationRoutes);
 // support may be public or protected; if you want it protected, add the middleware
 app.use('/api/support', authMiddleware, supportRoutes);
+app.use("/api/reports", reportRoutes);
 
 // a small debug endpoint (optional)
 app.get('/api/debug/me', authMiddleware, (req, res) => res.json({ me: req.user }));
