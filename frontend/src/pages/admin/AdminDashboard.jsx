@@ -254,7 +254,9 @@
 // }
 
 // src/pages/admin/AdminDashboard.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
+import { AuthContext } from "../../context/AuthContext";
+
 import { motion } from "framer-motion";
 import {
   Users,
@@ -286,6 +288,12 @@ import {
 } from "recharts";
 
 export default function AdminDashboard() {
+
+  const { user, role } = useContext(AuthContext);
+
+  const name = user?.displayName?.split("__")[0] || "Admin";
+  const email = user?.email;
+
   const [stats, setStats] = useState({
     totalApplicants: 0,
     applicationsSubmitted: 0,
@@ -431,17 +439,33 @@ export default function AdminDashboard() {
     <div className="pt-15 px-8 max-w-7xl mx-auto text-gray-900 dark:text-gray-100">
       {/* HEADER */}
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="p-8 rounded-2xl bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-600 shadow-xl text-white mb-12"
-      >
-        <h1 className="text-4xl font-bold">Admin Dashboard</h1>
-        <p className="text-lg mt-2 opacity-90">
-          Overview of applications, users, verification progress, and system
-          analytics.
-        </p>
-      </motion.div>
+  initial={{ opacity: 0, y: -20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.6 }}
+  className="
+    p-10 rounded-3xl shadow-2xl
+    bg-gradient-to-r from-purple-600/70 via-indigo-600/70 to-blue-600/70
+    backdrop-blur-xl border border-white/20
+    text-white mb-12
+  "
+>
+  <h1 className="text-4xl font-extrabold tracking-wide">
+    Welcome, {name} 👋
+  </h1>
+
+  <p className="mt-2 text-lg opacity-90">{email}</p>
+
+  <span
+    className="
+      mt-5 inline-block px-5 py-1 
+      bg-white/20 text-white rounded-full text-sm
+      shadow-sm backdrop-blur-md
+    "
+  >
+    Role: {role?.toUpperCase() || "ADMIN"}
+  </span>
+</motion.div>
+
 
       {/* KPI CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">

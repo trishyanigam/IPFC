@@ -8,3 +8,5 @@ router.patch('/:id/status', auth, ctrl.updateStatus); // body: { action: 'block'
 router.delete('/:id', auth, ctrl.deleteUser);
 
 module.exports = router;
+
+

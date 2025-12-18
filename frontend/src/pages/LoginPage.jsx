@@ -46,6 +46,7 @@ export default function LoginPage() {
       }
 
       navigate("/dashboard");
+
     } catch {
       setError("Invalid email or password");
     }

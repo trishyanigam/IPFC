@@ -193,3 +193,22 @@ exports.getStats = async (req, res, next) => {
     next(err);
   }
 };
+
+
+exports.getMyActivity = async (req, res) => {
+  try {
+    const apps = await Application.find({ applicantUid: req.user.uid })
+      .sort({ updatedAt: -1 })
+      .limit(5);
+
+    const activity = apps.map(app => ({
+      text: `${app.title} is ${app.status}`,
+      time: app.updatedAt || app.createdAt
+    }));
+
+    res.json(activity);
+  } catch (err) {
+    console.error("Activity error:", err);
+    res.status(500).json({ error: "Failed to load activity" });
+  }
+};

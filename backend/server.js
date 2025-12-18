@@ -40,49 +40,108 @@
 
 
 // backend/server.js
+// require('dotenv').config();
+// const express = require('express');
+// const cors = require('cors');
+// const path = require('path');
+// const connectDB = require('./src/config/db'); // adjust path if different
+
+// const authMiddleware = require('./src/middleware/authMiddleware'); // new middleware
+// const userRoutes = require('./src/routes/userRoutes');
+// const applicationRoutes = require('./src/routes/applicationRoutes');
+// const documentRoutes = require('./src/routes/documentRoutes');
+// const notificationRoutes = require('./src/routes/notificationRoutes');
+// const supportRoutes = require('./src/routes/supportRoutes');
+// const reportRoutes = require("./src/routes/reportRoutes");
+
+// const app = express();
+// app.use(cors());
+// app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
+
+// // connect DB
+// connectDB()
+
+// // serve uploaded files folder (adjust folder name if needed)
+// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// // mount routes
+// // Protect routes that need authentication by applying authMiddleware
+// app.use('/api/users', authMiddleware, userRoutes);
+// app.use('/api/applications', authMiddleware, applicationRoutes);
+// app.use('/api/documents', authMiddleware, documentRoutes);
+// app.use('/api/notifications', authMiddleware, notificationRoutes);
+// // support may be public or protected; if you want it protected, add the middleware
+// app.use('/api/support', authMiddleware, supportRoutes);
+// app.use("/api/reports", reportRoutes);
+
+// // a small debug endpoint (optional)
+// app.get('/api/debug/me', authMiddleware, (req, res) => res.json({ me: req.user }));
+
+// // generic error handler
+// app.use((err, req, res, next) => {
+//   console.error('Unhandled error:', err);
+//   res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
+// });
+
+// const PORT = process.env.PORT || 5000;
+// app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+
+
+
+
+// backend/server.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const connectDB = require('./src/config/db'); // adjust path if different
+const connectDB = require('./src/config/db');
 
-const authMiddleware = require('./src/middleware/authMiddleware'); // new middleware
 const userRoutes = require('./src/routes/userRoutes');
 const applicationRoutes = require('./src/routes/applicationRoutes');
 const documentRoutes = require('./src/routes/documentRoutes');
 const notificationRoutes = require('./src/routes/notificationRoutes');
 const supportRoutes = require('./src/routes/supportRoutes');
-const reportRoutes = require("./src/routes/reportRoutes");
+const reportRoutes = require('./src/routes/reportRoutes');
+const authRoutes = require("./src/routes/authRoutes");
+
+
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // connect DB
-connectDB()
+connectDB();
+// serve uploads securely (NOT public browsing)
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// serve uploaded files folder (adjust folder name if needed)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// mount routes
-// Protect routes that need authentication by applying authMiddleware
-app.use('/api/users', authMiddleware, userRoutes);
-app.use('/api/applications', authMiddleware, applicationRoutes);
-app.use('/api/documents', authMiddleware, documentRoutes);
-app.use('/api/notifications', authMiddleware, notificationRoutes);
-// support may be public or protected; if you want it protected, add the middleware
-app.use('/api/support', authMiddleware, supportRoutes);
-app.use("/api/reports", reportRoutes);
+app.use("/api/auth", authRoutes);
 
-// a small debug endpoint (optional)
-app.get('/api/debug/me', authMiddleware, (req, res) => res.json({ me: req.user }));
+// mount routes (NO AUTH HERE)
+app.use('/api/users', userRoutes);
+app.use('/api/applications', applicationRoutes);
+app.use('/api/documents', documentRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/support', supportRoutes);
+app.use('/api/reports', reportRoutes);
 
-// generic error handler
+// health check
+app.get('/api/health', (req, res) => res.json({ ok: true }));
+
+// error handler
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
-  res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal server error',
+  });
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`✅ Server running on port ${PORT}`)
+);

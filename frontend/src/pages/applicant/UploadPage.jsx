@@ -322,7 +322,6 @@
 
 
 // src/pages/applicant/UploadPage.jsx
-// src/pages/applicant/UploadPage.jsx
 import React, { useState, useRef, useEffect } from "react";
 import { UploadCloud, FileText, XCircle, ChevronDown } from "lucide-react";
 import api from "../../services/api";
@@ -332,9 +331,26 @@ export default function UploadPage() {
   const [category, setCategory] = useState("");
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [buttonState, setButtonState] = useState("default"); // default | submitted
+  const [buttonState, setButtonState] = useState("default");
+
+  // ✅ NEW: application linking
+  const [applications, setApplications] = useState([]);
+  const [applicationId, setApplicationId] = useState("");
 
   const fileInputRef = useRef(null);
+
+  /* ------------------ LOAD USER APPLICATIONS ------------------ */
+  useEffect(() => {
+    const fetchApplications = async () => {
+      try {
+        const res = await api.get("/applications/my");
+        setApplications(res.data || []);
+      } catch (err) {
+        console.error("Failed to load applications");
+      }
+    };
+    fetchApplications();
+  }, []);
 
   /* ------------------ HANDLE FILES ------------------ */
   const handleFileSelect = (e) => {
@@ -362,6 +378,7 @@ export default function UploadPage() {
 
   /* ------------------ SUBMIT UPLOAD ------------------ */
   const submitUploads = async () => {
+    if (!applicationId) return toast.error("Please select an application");
     if (!category) return toast.error("Please select a category");
     if (files.length === 0) return toast.error("Add files first");
 
@@ -369,33 +386,29 @@ export default function UploadPage() {
     const loader = toast.loading("Uploading your documents...");
 
     try {
-      // upload all files
       for (const f of files) {
         const fd = new FormData();
         fd.append("file", f.file);
         fd.append("name", f.file.name);
         fd.append("category", category);
 
+        // ✅ CRITICAL FIX
+        fd.append("applicationId", applicationId);
+
         await api.post("/documents/upload", fd, {
           headers: { "Content-Type": "multipart/form-data" },
         });
       }
 
-      await new Promise((res) => setTimeout(res, 1200)); // small delay
-
       toast.dismiss(loader);
-      toast.success("Documents submitted successfully 🎉", { position: "top-center" });
-
-      setButtonState("submitted"); // button changes to submitted ✓
-
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      toast.success("Documents submitted successfully 🎉");
 
       setFiles([]);
       setCategory("");
-      loadDocuments();
+      setApplicationId("");
+      setButtonState("submitted");
 
-      setTimeout(() => setButtonState("default"), 2000); // reset button
-
+      setTimeout(() => setButtonState("default"), 2000);
     } catch (err) {
       console.error(err);
       toast.dismiss(loader);
@@ -405,36 +418,7 @@ export default function UploadPage() {
     }
   };
 
-  /* ------------------ LOAD USER DOCUMENTS ------------------ */
-  const [userDocs, setUserDocs] = useState([]);
-
-  const loadDocuments = async () => {
-    try {
-      const res = await api.get("/documents/my");
-      const docs = res.data || [];
-
-      // show only upload-page documents (exclude IP application documents)
-      const filteredDocs = docs.filter(
-        (doc) =>
-          !["Patent", "Trademark", "Design", "Copyright"].includes(
-            doc.category
-          )
-      );
-
-      setUserDocs(filteredDocs);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  useEffect(() => {
-    loadDocuments();
-    const interval = setInterval(loadDocuments, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
   /* ------------------ UI ------------------ */
-
   return (
     <div className="px-6 max-w-5xl mx-auto">
 
@@ -444,10 +428,37 @@ export default function UploadPage() {
         bg-gradient-to-br from-purple-600 via-blue-600 to-pink-600
         text-white backdrop-blur-xl border border-white/20
       ">
-        <h1 className="text-4xl font-extrabold tracking-wide">Upload Documents 📤</h1>
+        <h1 className="text-4xl font-extrabold tracking-wide">
+          Upload Documents 📤
+        </h1>
         <p className="mt-3 text-lg opacity-90">
           Upload supporting files for your IP application.
         </p>
+      </div>
+
+      {/* APPLICATION SELECT */}
+      <div className="
+        mt-10 p-10 rounded-3xl shadow-xl 
+        bg-white/60 dark:bg-gray-900/70
+        border border-gray-300 dark:border-gray-700 backdrop-blur-xl
+      ">
+        <label className="text-sm font-medium">Select Application</label>
+        <select
+          value={applicationId}
+          onChange={(e) => setApplicationId(e.target.value)}
+          className="
+            mt-2 w-full px-4 py-3 rounded-2xl bg-gray-100 dark:bg-gray-800
+            border border-gray-300 dark:border-gray-600
+            focus:ring-2 focus:ring-purple-500 transition
+          "
+        >
+          <option value="">Choose Application</option>
+          {applications.map((app) => (
+            <option key={app._id} value={app._id}>
+              {app.title}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* CATEGORY */}
@@ -475,8 +486,10 @@ export default function UploadPage() {
             <option value="forms">Declaration Forms</option>
             <option value="others">Other Supporting Documents</option>
           </select>
-
-          <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
+          <ChevronDown
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+            size={20}
+          />
         </div>
       </div>
 
@@ -495,8 +508,13 @@ export default function UploadPage() {
         <UploadCloud size={48} className="text-purple-500 mb-2" />
         <p className="font-semibold text-lg">Drag & Drop files here</p>
         <p className="text-gray-600">or click to browse</p>
-
-        <input type="file" hidden multiple ref={fileInputRef} onChange={handleFileSelect} />
+        <input
+          type="file"
+          hidden
+          multiple
+          ref={fileInputRef}
+          onChange={handleFileSelect}
+        />
       </div>
 
       {/* FILE PREVIEW */}
@@ -509,26 +527,33 @@ export default function UploadPage() {
 
           <div className="space-y-4">
             {files.map((item, index) => (
-              <div key={index}
+              <div
+                key={index}
                 className="
                   p-5 rounded-2xl border border-gray-300 
                   bg-gray-50 shadow-md flex items-center gap-5
                 "
               >
                 {item.preview ? (
-                  <img src={item.preview} className="w-24 h-24 object-cover rounded-xl shadow" />
+                  <img
+                    src={item.preview}
+                    className="w-24 h-24 object-cover rounded-xl"
+                  />
                 ) : (
                   <FileText size={50} className="text-purple-500" />
                 )}
 
                 <div className="flex-1">
-                  <p className="font-medium text-gray-900">{item.file.name}</p>
+                  <p className="font-medium">{item.file.name}</p>
                   <p className="text-sm text-gray-600">
                     {(item.file.size / 1024).toFixed(1)} KB
                   </p>
                 </div>
 
-                <button onClick={() => removeFile(index)} className="text-red-500 hover:text-red-600">
+                <button
+                  onClick={() => removeFile(index)}
+                  className="text-red-500 hover:text-red-600"
+                >
                   <XCircle size={32} />
                 </button>
               </div>
@@ -537,70 +562,19 @@ export default function UploadPage() {
         </div>
       )}
 
-      {/* SUBMIT BUTTON WITH GREEN GLOW */}
+      {/* SUBMIT BUTTON */}
       <button
         disabled={loading}
         onClick={submitUploads}
-        className={`
+        className="
           mt-10 w-full py-4 text-lg rounded-2xl font-semibold text-white
           bg-gradient-to-r from-purple-600 to-blue-600
           hover:from-purple-700 hover:to-blue-700 shadow-xl transition
-          ${buttonState === "submitted" ? "animate-[pulse_1s_ease-in-out_infinite] !bg-green-600" : ""}
-        `}
-        style={{
-          boxShadow:
-            buttonState === "submitted"
-              ? "0 0 20px 4px rgba(34,197,94,0.7)"
-              : "",
-        }}
+        "
       >
-        {loading && buttonState === "default"
-          ? "Uploading..."
-          : buttonState === "submitted"
-          ? "Submitted ✓"
-          : "Submit Documents 🚀"}
+        {loading ? "Uploading..." : "Submit Documents 🚀"}
       </button>
-
-      {/* DOCUMENT LIST */}
-      <div className="mt-14">
-        <h2 className="text-2xl font-bold mb-5 text-white">Your Uploaded Documents</h2>
-
-        <div className="space-y-4">
-          {userDocs.map((doc) => (
-            <div key={doc._id}
-              className="p-5 rounded-2xl border bg-white shadow flex gap-5 items-center"
-            >
-              {doc.mimeType?.startsWith("image") ? (
-                <img src={doc.url} className="w-20 h-20 object-cover rounded-xl" />
-              ) : (
-                <FileText size={48} className="text-purple-600" />
-              )}
-
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">{doc.name}</h3>
-                <p className="text-sm text-gray-700">{doc.category}</p>
-                <p className="text-xs text-gray-600 mt-1">
-                  Uploaded {new Date(doc.uploadedAt).toLocaleString()}
-                </p>
-              </div>
-
-              <span
-                className="px-3 py-1 rounded-full text-white text-sm"
-                style={{
-                  background:
-                    doc.status === "verified"
-                      ? "#10b981"
-                      : doc.status === "rejected"
-                      ? "#ef4444"
-                      : "#f59e0b",
-                }}
-              >
-                {doc.status}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
+

@@ -288,7 +288,6 @@
 
 
 // src/pages/applicant/DashboardPage.jsx
-// src/pages/applicant/DashboardPage.jsx
 import React, { useContext, useEffect, useState, useRef } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { Link } from "react-router-dom";
@@ -314,16 +313,27 @@ export default function DashboardPage() {
     rejected: 0,
   });
 
+  const [docStats, setDocStats] = useState({
+  total: 0,
+  pending: 0,
+  verified: 0,
+  rejected: 0,
+});
+
+
+  const [activity, setActivity] = useState([]);
+
+
   const prevAppsRef = useRef([]);
   const prevDocsRef = useRef([]);
 
   const loadDashboard = async () => {
     try {
-      // Load Applications
+      // 🔹 LOAD APPLICATIONS
       const resApps = await api.get("/applications/my");
       const apps = resApps.data || [];
 
-      // Detect Application Status Change
+      // 🔹 Detect application status change
       apps.forEach((a) => {
         const prev = prevAppsRef.current.find((p) => p._id === a._id);
         if (prev && prev.status !== a.status) {
@@ -338,7 +348,7 @@ export default function DashboardPage() {
       });
       prevAppsRef.current = apps;
 
-      // Load Documents
+      // 🔹 LOAD DOCUMENTS (for notifications only)
       const resDocs = await api.get("/documents/my");
       const docs = resDocs.data || [];
 
@@ -351,7 +361,7 @@ export default function DashboardPage() {
       });
       prevDocsRef.current = docs;
 
-      // Stats Calculation
+      // 🔹 UPDATE APPLICATION STATS
       setStats({
         total: apps.length,
         pending: apps.filter((a) => a.status === "pending").length,
@@ -359,15 +369,54 @@ export default function DashboardPage() {
         rejected: apps.filter((a) => a.status === "rejected").length,
       });
     } catch (err) {
-      console.error(err);
+      console.error("Dashboard load error:", err);
     }
   };
 
+  // ✅ FIX 1: WAIT FOR USER BEFORE LOADING DASHBOARD
   useEffect(() => {
+    if (!user) return;
+
     loadDashboard();
     const interval = setInterval(loadDashboard, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
+
+
+  useEffect(() => {
+  if (!user) return;
+
+  const loadActivity = async () => {
+    try {
+      const res = await api.get("/applications/activity");
+      setActivity(res.data || []);
+    } catch (err) {
+      console.error("Failed to load activity");
+    }
+  };
+
+  loadActivity();
+}, [user]);
+
+
+  // ✅ FIX 2: WAIT FOR USER BEFORE FETCHING DOCUMENT STATS
+  // useEffect(() => {
+  //   if (!user) return;
+
+  //   const fetchDocumentStats = async () => {
+  //     try {
+  //       const res = await api.get("/documents/stats");
+  //       setDocStats(res.data);
+  //     } catch (err) {
+  //       console.error(
+  //         "Failed to load document stats",
+  //         err.response?.data || err.message
+  //       );
+  //     }
+  //   };
+
+  //   fetchDocumentStats();
+  // }, [user]);
 
   const name = user?.displayName?.split("__")[0] || "User";
   const email = user?.email;
@@ -402,7 +451,7 @@ export default function DashboardPage() {
         </span>
       </div>
 
-      {/* SUMMARY CARDS */}
+      {/* APPLICATION SUMMARY */}
       <h2 className="text-2xl font-bold mt-14 mb-4">Your IP Summary</h2>
 
       <div className="grid md:grid-cols-4 gap-7">
@@ -434,6 +483,7 @@ export default function DashboardPage() {
           color="bg-red-500/20 text-red-400"
         />
       </div>
+
 
       {/* QUICK ACTIONS */}
       <h2 className="text-2xl font-bold mt-14 mb-4">Quick Actions</h2>
@@ -468,7 +518,7 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* RECENT ACTIVITY (EMPTY – no sample items) */}
+      {/* RECENT ACTIVITY */}
       <h2 className="text-2xl font-bold mt-14 mb-4">Recent Activity</h2>
 
       <div
@@ -479,28 +529,39 @@ export default function DashboardPage() {
       "
       >
         <ul className="space-y-5">
-          {/* No sample timeline entries - kept empty intentionally */}
-        </ul>
+  {activity.length === 0 && (
+    <p className="text-gray-500 dark:text-gray-400">
+      No recent activity yet.
+    </p>
+  )}
+
+  {activity.map((a, i) => (
+    <Timeline
+      key={i}
+      text={a.text}
+      time={new Date(a.time).toLocaleString()}
+    />
+  ))}
+</ul>
+
       </div>
     </div>
   );
 }
 
-/* -------------------- UI COMPONENTS (unchanged) -------------------- */
+/* -------------------- UI COMPONENTS (UNCHANGED) -------------------- */
 
 function StatCard({ title, value, icon, color }) {
   return (
     <div
-      className={`
+      className="
         p-6 rounded-3xl shadow-xl border border-gray-300 dark:border-gray-700
         bg-white/80 dark:bg-gray-900/70 backdrop-blur-lg 
         transform transition-all duration-300 hover:scale-[1.04]
         hover:shadow-2xl
-      `}
+      "
     >
-      <div
-        className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 ${color}`}
-      >
+      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 ${color}`}>
         {icon}
       </div>
       <h3 className="text-lg font-semibold">{title}</h3>
@@ -524,7 +585,6 @@ function ActionCard({ title, desc, icon, link }) {
       <div className="text-purple-500 mb-3 group-hover:scale-110 transition-all">
         {icon}
       </div>
-
       <h3 className="text-lg font-bold mb-1">{title}</h3>
       <p className="text-sm opacity-70">{desc}</p>
     </Link>
@@ -535,12 +595,15 @@ function Timeline({ text, time }) {
   return (
     <li
       className="
-        border-l-4 border-purple-500 pl-4 
+        border-l-4 border-purple-500 pl-4
         dark:border-purple-400
       "
     >
-      <p className="text-gray-800 dark:text-gray-200 font-medium">{text}</p>
+      <p className="text-gray-800 dark:text-gray-200 font-medium">
+        {text}
+      </p>
       <span className="text-sm opacity-60">{time}</span>
     </li>
   );
 }
+

@@ -143,7 +143,6 @@
 //   );
 // }
 
-
 // src/pages/admin/VerifyDocuments.jsx
 // import React, { useState, useEffect } from "react";
 // import api from "../../services/api";
@@ -223,16 +222,10 @@
 //   return "#9ca3af";
 // }
 
-
 // src/pages/admin/VerifyDocuments.jsx
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  Search,
-  FileCheck,
-  FileX,
-  Filter,
-} from "lucide-react";
+import { Search, FileCheck, FileX, Filter, Eye } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
 
@@ -255,20 +248,17 @@ export default function VerifyDocuments() {
     }
   };
 
-  // Smooth soft auto-refresh (every 15s)
   useEffect(() => {
-    load(); // initial
+    load();
     const interval = setInterval(async () => {
       try {
         const res = await api.get("/documents/all");
-        // soft merge update - no flicker
-        setDocs(prev => {
+        setDocs((prev) => {
           const updated = [...prev];
-          res.data.forEach(serverDoc => {
-            const index = updated.findIndex(d => d._id === serverDoc._id);
-            if (index !== -1) {
+          res.data.forEach((serverDoc) => {
+            const index = updated.findIndex((d) => d._id === serverDoc._id);
+            if (index !== -1)
               updated[index] = { ...updated[index], ...serverDoc };
-            }
           });
           return updated;
         });
@@ -281,15 +271,17 @@ export default function VerifyDocuments() {
     try {
       await api.patch(`/documents/${id}/review`, { action });
 
-      setDocs(prev =>
-        prev.map(d =>
+      setDocs((prev) =>
+        prev.map((d) =>
           d._id === id
             ? { ...d, status: action === "verify" ? "verified" : "rejected" }
             : d
         )
       );
 
-      toast.success(action === "verify" ? "Document verified" : "Document rejected");
+      toast.success(
+        action === "verify" ? "Document verified" : "Document rejected"
+      );
     } catch (err) {
       console.error(err);
       toast.error("Failed to update");
@@ -315,7 +307,6 @@ export default function VerifyDocuments() {
 
   return (
     <div className="pt-16 px-8 max-w-7xl mx-auto dark:text-white">
-
       {/* PAGE TITLE */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -366,7 +357,6 @@ export default function VerifyDocuments() {
 
       {/* DOCUMENT GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-
         {loading ? (
           <p>Loading...</p>
         ) : (
@@ -378,51 +368,72 @@ export default function VerifyDocuments() {
               className="bg-gray-100 dark:bg-gray-800 p-6 rounded-2xl shadow 
                          border border-gray-300/40 dark:border-gray-700/40"
             >
-              {/* Document Preview */}
+              {/* PREVIEW */}
               <img
-                src={doc.url}
+                src={`${import.meta.env.VITE_BACKEND_URL}${doc.url}`}
                 alt="document preview"
                 className="w-full h-40 object-cover rounded-lg mb-4"
               />
 
-              {/* Applicant Info */}
+              {/* INFO */}
               <h2 className="text-xl font-semibold">
                 {doc.ownerEmail || doc.ownerUid}
               </h2>
               <p className="text-gray-600 dark:text-gray-300">{doc.name}</p>
 
-              {/* STATUS BADGE */}
+              {/* STATUS */}
               <span
                 className={`inline-block mt-3 px-4 py-1 text-white rounded-full text-sm 
-                            ${statusColor[doc.status?.toLowerCase()] || "bg-gray-500"}`}
+                ${statusColor[doc.status?.toLowerCase()] || "bg-gray-500"}`}
               >
                 {doc.status}
               </span>
 
-              {/* BUTTONS */}
-              <div className="flex gap-3 mt-5">
+              {/* ACTIONS */}
+              <div className="mt-5 space-y-3">
+                {/* VIEW BUTTON (TOP) */}
                 <button
-                  onClick={() => review(doc._id, "verify")}
-                  className="flex items-center gap-2 bg-green-600 text-white 
-                             px-4 py-2 rounded-xl hover:bg-green-700 transition"
+                  onClick={() =>
+                    window.open(
+                      `${import.meta.env.VITE_BACKEND_URL}${doc.url}`,
+                      "_blank",
+                      "noopener,noreferrer"
+                    )
+                  }
+                  className="w-full flex items-center justify-center gap-2 
+               bg-indigo-600 text-white px-4 py-2 rounded-xl 
+               hover:bg-indigo-700 transition"
                 >
-                  <FileCheck size={18} />
-                  Approve
+                  <Eye size={18} />
+                  View
                 </button>
 
-                <button
-                  onClick={() => review(doc._id, "reject")}
-                  className="flex items-center gap-2 bg-red-600 text-white 
-                             px-4 py-2 rounded-xl hover:bg-red-700 transition"
-                >
-                  <FileX size={18} />
-                  Reject
-                </button>
+                {/* APPROVE + REJECT (BOTTOM ROW) */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => review(doc._id, "verify")}
+                    className="flex-1 flex items-center justify-center gap-2 
+                 bg-green-600 text-white px-4 py-2 rounded-xl 
+                 hover:bg-green-700 transition"
+                  >
+                    <FileCheck size={18} />
+                    Approve
+                  </button>
+
+                  <button
+                    onClick={() => review(doc._id, "reject")}
+                    className="flex-1 flex items-center justify-center gap-2 
+                 bg-red-600 text-white px-4 py-2 rounded-xl 
+                 hover:bg-red-700 transition"
+                  >
+                    <FileX size={18} />
+                    Reject
+                  </button>
+                </div>
               </div>
             </motion.div>
           ))
         )}
-
       </div>
     </div>
   );

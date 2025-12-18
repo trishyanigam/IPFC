@@ -130,7 +130,6 @@
 //   );
 // }
 
-
 // src/pages/admin/ReviewApplications.jsx
 // import React, { useState, useEffect } from "react";
 // import api from "../../services/api";
@@ -227,18 +226,10 @@
 //   return "#9ca3af";
 // }
 
-
-
-
-
 // src/pages/admin/ReviewApplications.jsx
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  Search,
-  Filter,
-  FileText,
-} from "lucide-react";
+import { Search, Filter, FileText } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
 
@@ -270,10 +261,9 @@ export default function ReviewApplications() {
   const updateStatus = async (id, status) => {
     try {
       await api.patch(`/applications/${id}/status`, { status });
-
-      // update UI instantly
-      setApps((prev) => prev.map((a) => (a._id === id ? { ...a, status } : a)));
-
+      setApps((prev) =>
+        prev.map((a) => (a._id === id ? { ...a, status } : a))
+      );
       toast.success(`Application marked as ${status}`);
     } catch (err) {
       console.error(err);
@@ -283,7 +273,6 @@ export default function ReviewApplications() {
 
   const statusColor = {
     pending: "bg-yellow-500",
-    "in review": "bg-blue-500",
     approved: "bg-green-500",
     rejected: "bg-red-500",
   };
@@ -302,7 +291,7 @@ export default function ReviewApplications() {
   return (
     <div className="pt-16 px-8 max-w-7xl mx-auto dark:text-gray-100">
 
-      {/* PAGE TITLE */}
+      {/* HEADER */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -321,7 +310,7 @@ export default function ReviewApplications() {
 
       {/* FILTER TABS */}
       <div className="flex gap-4 mb-6 text-sm">
-        {["all", "pending", "in review", "approved", "rejected"].map((tab) => (
+        {["all", "pending", "approved", "rejected"].map((tab) => (
           <button
             key={tab}
             onClick={() => setFilter(tab)}
@@ -336,7 +325,7 @@ export default function ReviewApplications() {
         ))}
       </div>
 
-      {/* SEARCH BAR */}
+      {/* SEARCH */}
       <div className="relative mb-8">
         <Search className="absolute left-3 top-3 text-gray-500" size={18} />
         <input
@@ -361,7 +350,7 @@ export default function ReviewApplications() {
               <th className="p-4">Application Type</th>
               <th className="p-4">Submitted On</th>
               <th className="p-4">Status</th>
-              <th className="p-4 text-right">Action</th>
+              <th className="p-4 text-center">Action</th>
             </tr>
           </thead>
 
@@ -393,29 +382,42 @@ export default function ReviewApplications() {
                   </td>
 
                   <td className="p-4">{app.ipType}</td>
+
                   <td className="p-4">
                     {new Date(app.createdAt).toLocaleDateString()}
                   </td>
 
                   <td className="p-4">
                     <span
-                      className={`
-                        px-3 py-1 rounded-full text-white text-sm
-                        ${statusColor[app.status?.toLowerCase()] || "bg-gray-500"}
-                      `}
+                      className={`px-3 py-1 rounded-full text-white text-sm ${
+                        statusColor[app.status?.toLowerCase()] || "bg-gray-500"
+                      }`}
                     >
                       {app.status}
                     </span>
                   </td>
 
-                  <td className="p-4 text-right">
-                    <div className="flex gap-2 justify-end">
-                      <button
-                        onClick={() => updateStatus(app._id, "in review")}
-                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
-                      >
-                        In Review
-                      </button>
+                  {/* ACTIONS */}
+                  <td className="p-4 text-center">
+                    <div className="flex gap-6 justify-center flex-wrap">
+
+                      {app.files?.length > 0 ? (
+                        <button
+                          onClick={() => {
+                            const file = app.files[0];
+                            window.open(
+                              `${import.meta.env.VITE_BACKEND_URL}/uploads/${file.filename}`,
+                              "_blank",
+                              "noopener,noreferrer"
+                            );
+                          }}
+                          className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition"
+                        >
+                          View Document
+                        </button>
+                      ) : (
+                        <span className="text-gray-400 text-sm">No document</span>
+                      )}
 
                       <button
                         onClick={() => updateStatus(app._id, "approved")}
@@ -430,6 +432,7 @@ export default function ReviewApplications() {
                       >
                         Reject
                       </button>
+
                     </div>
                   </td>
                 </motion.tr>
@@ -441,3 +444,5 @@ export default function ReviewApplications() {
     </div>
   );
 }
+
+
