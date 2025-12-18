@@ -107,7 +107,9 @@ const {
   getMyDocuments,
   getAllDocuments,
   verifyDocument,
-  downloadDocument, // ✅ IMPORTANT
+  downloadDocument,
+  viewDocument,
+ // ✅ IMPORTANT
 } = require("../controllers/documentController");
 
 router.post(
@@ -123,6 +125,9 @@ router.patch("/verify/:id", authMiddleware, verifyDocument);
 
 // ✅ THIS ROUTE WAS MISSING / WRONG EARLIER
 router.get("/download/:id", authMiddleware, downloadDocument);
+router.get("/view/:id", authMiddleware, viewDocument);
+
+
 
 module.exports = router;
 

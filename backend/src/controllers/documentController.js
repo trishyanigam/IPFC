@@ -223,3 +223,39 @@ exports.downloadDocument = async (req, res, next) => {
     next(err);
   }
 };
+/* -------------------- VIEW DOCUMENT (INLINE) -------------------- */
+exports.viewDocument = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const doc = await Document.findById(id);
+    if (!doc) {
+      return res.status(404).json({ error: "Document not found" });
+    }
+
+    // ✅ Allow:
+    // - admin → any document
+    // - applicant → only their own document
+    if (
+      req.user.role !== "admin" &&
+      doc.ownerUid !== req.user.uid
+    ) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    const filePath = path.join(process.cwd(), "uploads", doc.filename);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: "File not found on server" });
+    }
+
+    res.setHeader("Content-Type", doc.mimeType);
+    res.setHeader("Content-Disposition", "inline");
+
+    fs.createReadStream(filePath).pipe(res);
+
+  } catch (err) {
+    console.error("View document error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
