@@ -97,6 +97,8 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const connectDB = require('./src/config/db');
+const http = require("http");
+const { Server } = require("socket.io");
 
 const userRoutes = require('./src/routes/userRoutes');
 const applicationRoutes = require('./src/routes/applicationRoutes');
@@ -109,6 +111,53 @@ const authRoutes = require("./src/routes/authRoutes");
 
 
 const app = express();
+const server = http.createServer(app);
+app.use(cors({
+  origin: ["http://localhost:5173", "http://localhost:5174"],
+  credentials: true,
+}));
+
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "http://localhost:5174",
+  ],
+  credentials: true,
+}));
+
+// SOCKET LOGIC
+const io = new Server(server, {
+  cors: {
+    origin: ["http://localhost:5173", "http://localhost:5174"],
+    methods: ["GET", "POST"],
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log("🟢 Socket connected:", socket.id);
+
+  socket.on("join-room", (roomId) => {
+    if (!roomId) return;
+    socket.join(roomId);
+    console.log(`📌 Joined room: ${roomId}`);
+  });
+
+  socket.on("send-message", (data) => {
+    const { roomId, message, sender } = data;
+    if (!roomId || !message) return;
+
+    io.to(roomId).emit("receive-message", {
+      message,
+      sender,
+      time: new Date().toISOString(),
+    });
+  });
+
+  socket.on("disconnect", () => {
+    console.log("🔴 Socket disconnected:", socket.id);
+  });
+});
+
 
 app.use(cors());
 app.use(express.json());
@@ -142,6 +191,7 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () =>
-  console.log(`✅ Server running on port ${PORT}`)
+server.listen(PORT, () =>
+  console.log(`🚀 Server running with sockets on port ${PORT}`)
 );
+

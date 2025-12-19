@@ -287,6 +287,10 @@ import {
   Cell,
 } from "recharts";
 
+import ChatBox from "../../components/ChatBox";
+
+
+
 export default function AdminDashboard() {
 
   const { user, role } = useContext(AuthContext);
@@ -311,7 +315,11 @@ export default function AdminDashboard() {
   const [pieData, setPieData] = useState([]); // for Donut
   const [loading, setLoading] = useState(true);
 
+
   const COLORS = ["#8b5cf6", "#3b82f6", "#f97316"]; // purple, blue, orange
+
+  const [selectedApplicantUid, setSelectedApplicantUid] = useState(null);
+
 
   // load all needed endpoints
   const loadAll = async () => {
@@ -494,6 +502,24 @@ export default function AdminDashboard() {
       {/* ANALYTICS SECTION */}
       <div className="mt-14 grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* AREA CHART (Trend) */}
+        <input
+  placeholder="Enter Applicant UID"
+  className="border p-2 mb-3"
+  onChange={(e) => setSelectedApplicantUid(e.target.value)}
+/>
+
+{selectedApplicantUid && (
+  <ChatBox
+    user={{ uid: user.uid, role: "admin" }}
+    roomId={selectedApplicantUid}
+  />
+)}
+
+
+
+
+
+
         <motion.div
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}

@@ -302,6 +302,11 @@ import {
 } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
+import ChatBox from "../../components/ChatBox";
+import FloatingChat from "../../components/chat/FloatingChat";
+
+
+
 
 export default function DashboardPage() {
   const { user, role } = useContext(AuthContext);
@@ -516,6 +521,18 @@ export default function DashboardPage() {
           icon={<HelpCircle size={34} />}
           link="/support"
         />
+
+        <div className="px-6 max-w-6xl mx-auto">
+    {/* existing dashboard UI */}
+
+    <FloatingChat />
+  </div>
+
+
+
+
+
+
       </div>
 
       {/* RECENT ACTIVITY */}
