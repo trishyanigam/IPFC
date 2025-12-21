@@ -1,59 +1,47 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { MessageCircle, X } from "lucide-react";
 import { AuthContext } from "../../context/AuthContext";
-import ChatBox from "../ChatBox.jsx";
+import ChatBox from "../ChatBox";
 
+const APPLICANT_ID = "4bVOWI73fuYdtCu9odV7mmH3dSW2";
 
 export default function FloatingChat() {
-  const { user } = useContext(AuthContext);
+  const { user, role } = useContext(AuthContext);
   const [open, setOpen] = useState(false);
+  const [roomId, setRoomId] = useState(null);
 
-  // Safety guard
-  if (!user) return null;
+  useEffect(() => {
+    if (!user) return;
+
+    // 🔥 BOTH ADMIN & APPLICANT USE SAME ROOM
+    setRoomId(APPLICANT_ID);
+  }, [user, role]);
+
+  if (!roomId) return null;
 
   return (
     <>
-      {/* CHAT WINDOW */}
+      <button
+        onClick={() => setOpen(true)}
+        className="fixed bottom-6 right-6 bg-purple-600 p-4 rounded-full z-50"
+      >
+        <MessageCircle />
+      </button>
+
       {open && (
-        <div
-          className="
-            fixed bottom-20 right-6 z-50
-            w-[320px] h-[420px]
-            bg-gray-900 border border-gray-700
-            rounded-2xl shadow-2xl
-            overflow-hidden
-          "
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
-            <span className="font-semibold">Live Chat</span>
+        <div className="fixed bottom-20 right-6 w-80 bg-gray-900 rounded-lg z-50">
+          <div className="flex justify-between p-3 border-b border-gray-700">
+            <h3 className="text-white font-semibold">
+              {role === "admin" ? "Applicant Chat" : "Chat with Admin"}
+            </h3>
             <button onClick={() => setOpen(false)}>
-              <X size={18} />
+              <X className="text-gray-400" />
             </button>
           </div>
 
-          {/* Chat */}
-          <ChatBox
-            user={{ uid: user.uid, role: "applicant" }}
-            roomId={user.uid}
-          />
+          <ChatBox roomId={roomId} sender={role} />
         </div>
       )}
-
-      {/* FLOATING BUTTON */}
-      <button
-        onClick={() => setOpen(true)}
-        className="
-          fixed bottom-6 right-6 z-50
-          w-14 h-14 rounded-full
-          bg-gradient-to-r from-purple-600 to-indigo-600
-          text-white
-          flex items-center justify-center
-          shadow-xl hover:scale-110 transition
-        "
-      >
-        <MessageCircle size={26} />
-      </button>
     </>
   );
 }

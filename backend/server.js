@@ -111,57 +111,51 @@ const authRoutes = require("./src/routes/authRoutes");
 
 
 const app = express();
+app.use(cors({ origin: "*" }));
+app.use(express.json());
+
 const server = http.createServer(app);
-app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:5174"],
-  credentials: true,
-}));
 
-app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "http://localhost:5174",
-  ],
-  credentials: true,
-}));
-
-// SOCKET LOGIC
+/* ---------- SOCKET.IO ---------- */
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "http://localhost:5174"],
+    origin: "*",
     methods: ["GET", "POST"],
   },
 });
 
+// in-memory chat store (for demo)
+// later you can move this to MongoDB
+const chats = {};
+
 io.on("connection", (socket) => {
-  console.log("🟢 Socket connected:", socket.id);
+  console.log("🔌 Socket connected:", socket.id);
 
-  socket.on("join-room", (roomId) => {
-    if (!roomId) return;
+  socket.on("join_room", ({ roomId }) => {
     socket.join(roomId);
-    console.log(`📌 Joined room: ${roomId}`);
+    socket.emit("chat_history", chats[roomId] || []);
   });
 
-  socket.on("send-message", (data) => {
-    const { roomId, message, sender } = data;
-    if (!roomId || !message) return;
+  socket.on("send_message", ({ roomId, sender, message }) => {
+  const msg = {
+    roomId,
+    sender,
+    message,
+    time: new Date().toISOString(),
+  };
 
-    io.to(roomId).emit("receive-message", {
-      message,
-      sender,
-      time: new Date().toISOString(),
-    });
-  });
+  if (!chats[roomId]) chats[roomId] = [];
+  chats[roomId].push(msg);
 
-  socket.on("disconnect", () => {
-    console.log("🔴 Socket disconnected:", socket.id);
-  });
+  io.to(roomId).emit("receive_message", msg);
 });
 
 
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+  socket.on("disconnect", () => {
+    console.log("❌ Socket disconnected:", socket.id);
+  });
+});
+
 
 // connect DB
 connectDB();

@@ -302,7 +302,7 @@ import {
 } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
-import ChatBox from "../../components/ChatBox";
+// import ChatBox from "../../components/ChatBox";
 import FloatingChat from "../../components/chat/FloatingChat";
 
 
@@ -525,7 +525,6 @@ export default function DashboardPage() {
         <div className="px-6 max-w-6xl mx-auto">
     {/* existing dashboard UI */}
 
-    <FloatingChat />
   </div>
 
 
@@ -562,6 +561,8 @@ export default function DashboardPage() {
 </ul>
 
       </div>
+      
+<FloatingChat />
     </div>
   );
 }

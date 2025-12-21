@@ -256,6 +256,8 @@
 // src/pages/admin/AdminDashboard.jsx
 import React, { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
+import FloatingChat from "../../components/chat/FloatingChat";
+
 
 import { motion } from "framer-motion";
 import {
@@ -287,7 +289,6 @@ import {
   Cell,
 } from "recharts";
 
-import ChatBox from "../../components/ChatBox";
 
 
 
@@ -317,8 +318,6 @@ export default function AdminDashboard() {
 
 
   const COLORS = ["#8b5cf6", "#3b82f6", "#f97316"]; // purple, blue, orange
-
-  const [selectedApplicantUid, setSelectedApplicantUid] = useState(null);
 
 
   // load all needed endpoints
@@ -445,6 +444,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="pt-15 px-8 max-w-7xl mx-auto text-gray-900 dark:text-gray-100">
+      <FloatingChat />
       {/* HEADER */}
       <motion.div
   initial={{ opacity: 0, y: -20 }}
@@ -499,26 +499,10 @@ export default function AdminDashboard() {
         />
       </div>
 
+
       {/* ANALYTICS SECTION */}
       <div className="mt-14 grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* AREA CHART (Trend) */}
-        <input
-  placeholder="Enter Applicant UID"
-  className="border p-2 mb-3"
-  onChange={(e) => setSelectedApplicantUid(e.target.value)}
-/>
-
-{selectedApplicantUid && (
-  <ChatBox
-    user={{ uid: user.uid, role: "admin" }}
-    roomId={selectedApplicantUid}
-  />
-)}
-
-
-
-
-
 
         <motion.div
           initial={{ opacity: 0, x: -30 }}
@@ -710,6 +694,7 @@ export default function AdminDashboard() {
           </ul>
         </motion.div>
       </div>
+      
     </div>
   );
 }
@@ -728,3 +713,5 @@ function Kpi({ icon, label, value }) {
     </motion.div>
   );
 }
+
+
