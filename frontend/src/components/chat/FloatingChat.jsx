@@ -2,44 +2,88 @@ import React, { useState, useContext, useEffect } from "react";
 import { MessageCircle, X } from "lucide-react";
 import { AuthContext } from "../../context/AuthContext";
 import ChatBox from "../ChatBox";
-
-const APPLICANT_ID = "4bVOWI73fuYdtCu9odV7mmH3dSW2";
+import socket from "../../socket";
 
 export default function FloatingChat() {
-  const { user, role } = useContext(AuthContext);
+  const { user, role, loading } = useContext(AuthContext);
+
   const [open, setOpen] = useState(false);
-  const [roomId, setRoomId] = useState(null);
+  const [activeRoom, setActiveRoom] = useState(null);
+  const [applicantRooms, setApplicantRooms] = useState([]);
 
+  // 🔌 CONNECT SOCKET (unconditional hook)
   useEffect(() => {
-    if (!user) return;
+    if (!loading && user && !socket.connected) {
+      socket.connect();
+    }
+  }, [loading, user]);
 
-    // 🔥 BOTH ADMIN & APPLICANT USE SAME ROOM
-    setRoomId(APPLICANT_ID);
-  }, [user, role]);
+  // 👤 APPLICANT AUTO ROOM
+  useEffect(() => {
+    if (!loading && role === "applicant" && user?.uid) {
+      setActiveRoom(user.uid);
+    }
+  }, [loading, role, user]);
 
-  if (!roomId) return null;
+  // 👮 ADMIN NOTIFICATIONS
+  useEffect(() => {
+    if (loading || role !== "admin") return;
+
+    const handler = (msg) => {
+      setApplicantRooms((prev) =>
+        prev.includes(msg.roomId) ? prev : [...prev, msg.roomId]
+      );
+    };
+
+    socket.on("admin_notify", handler);
+    return () => socket.off("admin_notify", handler);
+  }, [loading, role]);
+
+  // ✅ SAFE EARLY RETURN (AFTER hooks)
+  if (loading || !user) return null;
 
   return (
     <>
+      {/* Floating Button */}
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => setOpen(!open)}
         className="fixed bottom-6 right-6 bg-purple-600 p-4 rounded-full z-50"
       >
         <MessageCircle />
       </button>
 
+      {/* Chat Window */}
       {open && (
-        <div className="fixed bottom-20 right-6 w-80 bg-gray-900 rounded-lg z-50">
-          <div className="flex justify-between p-3 border-b border-gray-700">
-            <h3 className="text-white font-semibold">
-              {role === "admin" ? "Applicant Chat" : "Chat with Admin"}
-            </h3>
-            <button onClick={() => setOpen(false)}>
-              <X className="text-gray-400" />
-            </button>
-          </div>
+        <div className="fixed bottom-20 right-6 w-80 h-[420px] bg-gray-900 rounded-xl z-50">
 
-          <ChatBox roomId={roomId} sender={role} />
+          {/* ADMIN: applicant list */}
+          {role === "admin" && !activeRoom && (
+            <div className="p-3">
+              <h4 className="font-semibold mb-2">Applicants</h4>
+              {applicantRooms.length === 0 ? (
+                <p className="text-gray-400">No messages yet</p>
+              ) : (
+                applicantRooms.map((uid) => (
+                  <button
+                    key={uid}
+                    onClick={() => setActiveRoom(uid)}
+                    className="block w-full p-2 mb-1 bg-gray-800 rounded text-left"
+                  >
+                    Applicant: {uid.slice(0, 6)}
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* CHAT */}
+          {activeRoom && (
+            <ChatBox
+              roomId={activeRoom}
+              sender={role}
+              onClose={() => setActiveRoom(null)}
+            />
+          )}
         </div>
       )}
     </>

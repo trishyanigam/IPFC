@@ -147,8 +147,14 @@ io.on("connection", (socket) => {
   if (!chats[roomId]) chats[roomId] = [];
   chats[roomId].push(msg);
 
+  // 1️⃣ Send to chat room (applicant + admin when joined)
   io.to(roomId).emit("receive_message", msg);
+
+  // 2️⃣ Notify admins (VERY IMPORTANT)
+  io.emit("admin_notify", msg);
 });
+
+
 
 
   socket.on("disconnect", () => {
