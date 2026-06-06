@@ -17,11 +17,9 @@ const authRoutes = require("./src/routes/authRoutes");
 
 
 
-const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-
 const app = express();
 app.use(cors({
-  origin: [frontendUrl, "http://localhost:5173"],
+  origin: ["https://ipfc-alpha.vercel.app", "http://localhost:5173"],
   credentials: true,
 }));
 app.use(express.json());
@@ -31,7 +29,7 @@ const server = http.createServer(app);
 /* ---------- SOCKET.IO ---------- */
 const io = new Server(server, {
   cors: {
-    origin: [frontendUrl, "http://localhost:5173"],
+    origin: ["https://ipfc-alpha.vercel.app", "http://localhost:5173"],
     methods: ["GET", "POST"],
     credentials: true,
   },
