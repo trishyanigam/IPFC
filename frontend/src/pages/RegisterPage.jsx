@@ -91,10 +91,26 @@ export default function RegisterPage() {
 
       // 🔥 3. Register user in MongoDB
       try {
-        await api.post("/auth/register", {
-          role: form.role,
-          fullName: form.fullName,
-        });
+        // await api.post("/auth/register", {
+        //   role: form.role,
+        //   fullName: form.fullName,
+        // });
+        // 🔥 FORCE TOKEN CREATION
+const token = await cred.user.getIdToken(true);
+const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+await fetch(`${backendUrl}/api/auth/register`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  },
+  body: JSON.stringify({
+    role: form.role,
+    fullName: form.fullName,
+  }),
+});
+
+
       } catch (err) {
         // rollback firebase user if backend fails
         await cred.user.delete();
