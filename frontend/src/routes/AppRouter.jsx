@@ -11,7 +11,7 @@ import MyApplicationsPage from "../pages/applicant/MyApplicationsPage";
 import UploadPage from "../pages/applicant/UploadPage";
 import SupportPage from "../pages/applicant/SupportPage";
 
-import VerifyEmail from "../pages/VerifyEmail";
+import VerifyEmail from "../pages/verifyEmail";
 
 import DashboardPage from "../pages/applicant/DashboardPage"; // ✅ Correct path
 import ApplyPage from "../pages/applicant/ApplyPage";
